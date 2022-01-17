@@ -18,7 +18,7 @@
   },
   "require-dev": {
     "ext-json": "*",
-    "nette/tester": "^2.3",
+    "nette/tester": "^2.4.1",
     "tracy/tracy": "^2.3",
     "firebase/php-jwt": "^5.0",
     "slim/slim": "^4.5",
@@ -32,7 +32,8 @@
   "scripts": {
     "test": "@test:local",
     "test:local": "tester tests -C",
-    "test:ci": "tester tests -C --coverage tests/output/clover.xml --coverage-src src"
+    "test:ci": "tester tests",
+    "test:travis": "tester tests -C --coverage tests/output/clover.xml --coverage-src src"
   },
   "scripts-descriptions": {
     "test": "Run application tests. (defaults to local tests)",
