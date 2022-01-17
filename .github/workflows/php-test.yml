@@ -1,4 +1,4 @@
-name: Test Suite
+name: Tests
 
 on:
   # Controls when the action will be triggered.
