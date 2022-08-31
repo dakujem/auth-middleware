@@ -4,9 +4,6 @@
 [![Tests](https://github.com/dakujem/auth-middleware/actions/workflows/php-test.yml/badge.svg)](https://github.com/dakujem/auth-middleware/actions/workflows/php-test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/dakujem/auth-middleware/badge.svg?branch=main)](https://coveralls.io/github/dakujem/auth-middleware?branch=main)
 [![Join the chat at https://gitter.im/dakujem/auth-middleware](https://badges.gitter.im/dakujem/auth-middleware.svg)](https://gitter.im/dakujem/auth-middleware)
-<!--
-[![Build Status](https://travis-ci.com/dakujem/auth-middleware.svg?branch=main)](https://travis-ci.com/dakujem/auth-middleware)
--->
 
 Modern and highly flexible PSR-15 authentication and authorization middleware.
 

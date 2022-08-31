@@ -32,8 +32,7 @@
   "scripts": {
     "test": "@test:local",
     "test:local": "tester tests -C",
-    "test:ci": "tester tests",
-    "test:travis": "tester tests -C --coverage tests/output/clover.xml --coverage-src src"
+    "test:ci": "tester tests"
   },
   "scripts-descriptions": {
     "test": "Run application tests. (defaults to local tests)",
