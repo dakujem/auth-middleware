@@ -2,7 +2,7 @@
 
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/dakujem/auth-middleware)
 [![Tests](https://github.com/dakujem/auth-middleware/actions/workflows/php-test.yml/badge.svg)](https://github.com/dakujem/auth-middleware/actions/workflows/php-test.yml)
-[![Coverage Status](https://coveralls.io/repos/github/dakujem/auth-middleware/badge.svg?branch=trunk)](https://coveralls.io/github/dakujem/auth-middleware?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/dakujem/auth-middleware/badge.svg?branch=trunk)](https://coveralls.io/github/dakujem/auth-middleware?branch=trunk)
 [![Join the chat at https://gitter.im/dakujem/auth-middleware](https://badges.gitter.im/dakujem/auth-middleware.svg)](https://gitter.im/dakujem/auth-middleware)
 
 Modern and highly flexible PSR-15 authentication and authorization middleware.
