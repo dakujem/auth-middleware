@@ -89,18 +89,24 @@ final class TokenManipulators
      * All `RuntimeException`s are caught and converted to error messages.
      * Error messages are written to the other attribute of choice.
      *
+     * A custom message producer can convert the caught exception into whatever value is desired,
+     * including the exception itself (using `fn($v)=>$v`),
+     * it is not limited to string error messages only.
+     *
      * @param string $attributeName name of the attribute to write tokens to
      * @param string $errorAttributeName name of the attribute to write error messages to
+     * @param callable|null $messageProducer callable with signature `fn(Throwable):mixed` returning a value to be written to the error attribute in case of an error
      * @return callable
      */
     public static function attributeInjector(
         string $attributeName = self::TOKEN_ATTRIBUTE_NAME,
-        string $errorAttributeName = self::ERROR_ATTRIBUTE_NAME
+        string $errorAttributeName = self::ERROR_ATTRIBUTE_NAME,
+        ?callable $messageProducer = null
     ): callable {
         return function (
             callable $provider,
             Request $request
-        ) use ($attributeName, $errorAttributeName): Request {
+        ) use ($attributeName, $errorAttributeName, $messageProducer): Request {
             try {
                 // Inject the token returned by the provider to the selected attribute.
                 return $request->withAttribute(
@@ -110,9 +116,10 @@ final class TokenManipulators
             } catch (RuntimeException $exception) {
                 // Catch potential runtime errors raised by the provider
                 // and write the error messages to the attribute for errors.
+                $msg = $messageProducer !== null ? $messageProducer($exception) : $exception->getMessage();
                 return $request->withAttribute(
                     $errorAttributeName,
-                    $exception->getMessage(),
+                    $msg,
                 );
             }
         };
