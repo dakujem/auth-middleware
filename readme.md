@@ -8,6 +8,8 @@
 Modern and highly flexible PSR-15 authentication and authorization middleware.
 
 > 💿 `composer require dakujem/auth-middleware`
+>
+> 📒 [Changelog](changelog.md)
 
 
 ## Default Usage
