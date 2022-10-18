@@ -121,12 +121,12 @@ class _ComplexInteractionTest extends TestCase
         $request = $this->req()->withCookieParams(['token' => 'malformed.token']);
         self::check($mw(), $request, function (Request $request) {
             Assert::null($request->getAttribute('token'));        // no token and an error is present
-            Assert::same('Token error: Wrong number of segments', $request->getAttribute('token.error'));
+            Assert::same('Wrong number of segments', $request->getAttribute('token.error'));
         });
         $request = $this->req()->withHeader('Authorization', 'Bearer malformed.token');
         self::check($mw(), $request, function (Request $request) {
             Assert::null($request->getAttribute('token'));        // no token and an error is present
-            Assert::same('Token error: Wrong number of segments', $request->getAttribute('token.error'));
+            Assert::same('Wrong number of segments', $request->getAttribute('token.error'));
         });
     }
 
@@ -185,7 +185,7 @@ class _ComplexInteractionTest extends TestCase
         $request = $this->req()->withHeader('Authorization', 'Bearer malformed.token'); // invalid token
         self::check($mw(), $request, $requestCheck, function (Response $response) {
             Assert::same(401, $response->getStatusCode());
-            Assert::same(json_encode(['error' => ['message' => 'Token error: Wrong number of segments']]), $response->getBody()->getContents());
+            Assert::same(json_encode(['error' => ['message' => 'Wrong number of segments']]), $response->getBody()->getContents());
         });
     }
 

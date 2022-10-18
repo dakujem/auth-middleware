@@ -53,7 +53,7 @@ class _AttributeInjectorTest extends TestCase
             throw new LogicException($errm);
         };
         Assert::same(
-            "Token error: {$errm}",
+            $errm,
             (Man::attributeInjector()($runtime, $request))->getAttribute('token.error'),
             'The error message should be written to the \'token.error\' attribute by default.'
         );
@@ -63,11 +63,11 @@ class _AttributeInjectorTest extends TestCase
             'Nothing should be written to the \'token\' attribute.'
         );
         Assert::same(
-            "Token error: {$errm}",
+            $errm,
             (Man::attributeInjector('whatever', 'foo.bar')($runtime, $request))->getAttribute('foo.bar')
         );
         Assert::same(
-            "Token error: {$errm}",
+            $errm,
             (Man::attributeInjector('whatever', '')($runtime, $request))->getAttribute('')
         );
 

@@ -102,14 +102,19 @@ final class TokenManipulators
             Request $request
         ) use ($attributeName, $errorAttributeName): Request {
             try {
-                // Invoke the extraction and decoding process.
-                $token = $provider();
+                // Inject the token returned by the provider to the selected attribute.
+                return $request->withAttribute(
+                    $attributeName,
+                    $provider(), // Note: The extraction and decoding process is invoked at this point.
+                );
             } catch (RuntimeException $exception) {
-                // Write error messages.
-                return $request->withAttribute($errorAttributeName, 'Token error: ' . $exception->getMessage());
+                // Catch potential runtime errors raised by the provider
+                // and write the error messages to the attribute for errors.
+                return $request->withAttribute(
+                    $errorAttributeName,
+                    $exception->getMessage(),
+                );
             }
-            // Inject the token to the attribute.
-            return $request->withAttribute($attributeName, $token);
         };
     }
 
