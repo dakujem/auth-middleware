@@ -14,10 +14,9 @@ use InvalidArgumentException;
 final class Secret implements SecretContract
 {
     private string $algorithm;
-
     private $keyMaterial;
 
-    public function __construct($keyMaterial, string $algorithm)
+    public function __construct(mixed $keyMaterial, string $algorithm)
     {
         if (empty($keyMaterial)) {
             throw new InvalidArgumentException('Type error: $keyMaterial must not be empty');
@@ -29,7 +28,7 @@ final class Secret implements SecretContract
     /**
      * Return the key material - the secret.
      */
-    public function keyMaterial()
+    public function keyMaterial(): mixed
     {
         return $this->keyMaterial;
     }

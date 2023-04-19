@@ -10,6 +10,8 @@ require_once __DIR__ . '/support/ProxyLogger.php';
 use ArrayIterator;
 use Dakujem\Middleware\Factory\AuthWizard;
 use Dakujem\Middleware\FirebaseJwtDecoder;
+use Dakujem\Middleware\Secret;
+use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\Test\Support\_ProxyLogger;
 use Dakujem\Middleware\TokenManipulators;
 use Dakujem\Middleware\TokenMiddleware;
@@ -35,24 +37,19 @@ use TypeError;
  */
 class _TokenMwTest extends TestCase
 {
-    private string $key = 'Dakujem za halusky!';
+    private SecretContract $key;
 
-//    protected function setUp()
-//    {
-//        parent::setUp();
-//    }
-//
-//    protected function tearDown()
-//    {
-//        parent::tearDown();
-//    }
+    public function __construct()
+    {
+        $this->key = new Secret('Dakujem za halusky!', AuthWizard::$defaultAlgo);
+    }
 
     private function validToken(): string
     {
         return JWT::encode([
             'sub' => 42,
             'foo' => 'bar',
-        ], $this->key, AuthWizard::$defaultAlgo);
+        ], $this->key->keyMaterial(), $this->key->algorithm());
     }
 
     public function testHappyPath()

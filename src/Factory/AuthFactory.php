@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Dakujem\Middleware\Factory;
 
-use Dakujem\Middleware\FirebaseJwtDecoder;
 use Dakujem\Middleware\GenericMiddleware;
-use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\TokenManipulators as Man;
 use Dakujem\Middleware\TokenMiddleware;
 use LogicException;
@@ -164,23 +162,5 @@ class AuthFactory
                 ) ?? 'No valid token found.'
             );
         });
-    }
-
-    /**
-     * @deprecated please use AuthWizard::defaultDecoder instead
-     *
-     * Creates a default decoder factory.
-     * The factory can be used for the constructor.
-     *
-     * @param string|SecretContract[]|SecretContract $secret secret key for JWT decoder
-     * @param string|null $algo optional algorithm; only used when $secret is a string
-     * @return callable fn():FirebaseJwtDecoder
-     */
-    public static function defaultDecoderFactory(
-        $secret,
-        ?string $algo = null
-    ): callable {
-        $decoder = AuthWizard::defaultDecoder($secret, $algo);
-        return fn(): FirebaseJwtDecoder => $decoder;
     }
 }

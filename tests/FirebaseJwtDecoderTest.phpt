@@ -7,8 +7,12 @@ namespace Dakujem\Middleware\Test;
 require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/support/ProxyLogger.php';
 
+use Dakujem\Middleware\Factory\AuthWizard;
 use Dakujem\Middleware\FirebaseJwtDecoder;
+use Dakujem\Middleware\Secret;
+use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\Test\Support\_ProxyLogger;
+use Firebase\JWT\JWT;
 use InvalidArgumentException;
 use LogicException;
 use Psr\Log\LogLevel;
@@ -27,7 +31,12 @@ use UnexpectedValueException;
  */
 class _FirebaseJwtDecoderTest extends TestCase
 {
-    private string $key = 'Dakujem za halusky!';
+    private SecretContract $key;
+
+    public function __construct()
+    {
+        $this->key = new Secret('Dakujem za halusky!', AuthWizard::$defaultAlgo);
+    }
 
     public function testValidToken()
     {
@@ -38,7 +47,52 @@ class _FirebaseJwtDecoderTest extends TestCase
           "iat": 1516239022
         }');
         Assert::equal($expected, (new FirebaseJwtDecoder($this->key))($token));
-        Assert::equal($expected, (new FirebaseJwtDecoder($this->key, ['HS256']))($token));
+        Assert::equal($expected, (new FirebaseJwtDecoder($this->key))($token));
+    }
+
+    public function testMultiKeySupport()
+    {
+        $claims = [
+            'sub' => 42,
+            'foo' => 'bar',
+        ];
+        $expected = (object)$claims;
+
+        // Test the ability for numeric "kid" (key ID).
+        $token = JWT::encode($claims, $this->key->keyMaterial(), $this->key->algorithm(), '1');
+        $decoder = (new FirebaseJwtDecoder(new Secret('Dakujem za halusky!', 'HS512'), $this->key));
+        Assert::equal($expected, $decoder($token));
+
+        // Test the ability for arbitrary alphanumeric "kid" (key ID).
+        $token = JWT::encode($claims, $this->key->keyMaterial(), $this->key->algorithm(), 'foo');
+        $decoder = (new FirebaseJwtDecoder(bar: new Secret('Dakujem za halusky!', 'HS512'), foo: $this->key));
+        Assert::equal($expected, $decoder($token));
+        $decoder = (new FirebaseJwtDecoder(bar: new Secret('Dakujem za halusky!', 'HS512'), FOX: $this->key));
+        Assert::throws(
+            fn() => $decoder($token),
+            UnexpectedValueException::class
+        );
+        $decoder = (new FirebaseJwtDecoder(whatever: $this->key)); // when there is only a single key, the "kid" doesn't matter, only the algo must match
+        Assert::equal($expected, $decoder($token));
+    }
+
+    public function testInvalidSecrets()
+    {
+        Assert::type(SecretContract::class, new Secret('foo', ''));
+        Assert::type(SecretContract::class, new Secret('foo', 'foo'));
+
+        Assert::throws(
+            fn() => new Secret('', 'foo'),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret(null, 'foo'),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret([], 'foo'),
+            InvalidArgumentException::class
+        );
     }
 
     public function testMalformedToken()
@@ -90,13 +144,21 @@ class _FirebaseJwtDecoderTest extends TestCase
     public function testInvalidKey()
     {
         Assert::throws(
-            fn() => new FirebaseJwtDecoder(''),
+            fn() => new FirebaseJwtDecoder(),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret([], ''),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret('', 'whatever'),
             InvalidArgumentException::class
         );
 
         $token = implode('.', $this->tokenParts());
         Assert::throws(
-            fn() => (new FirebaseJwtDecoder('foobar!'))($token),
+            fn() => (new FirebaseJwtDecoder(new Secret('foobar!', AuthWizard::$defaultAlgo)))($token),
             UnexpectedValueException::class
         );
     }
@@ -105,11 +167,11 @@ class _FirebaseJwtDecoderTest extends TestCase
     {
         $token = implode('.', $this->tokenParts());
         Assert::throws(
-            fn() => (new FirebaseJwtDecoder($this->key, ['ritpalova']))($token),
+            fn() => (new FirebaseJwtDecoder(new Secret($this->key->keyMaterial(), 'ritpalova')))($token),
             UnexpectedValueException::class
         );
         Assert::throws(
-            fn() => (new FirebaseJwtDecoder($this->key, ['HS512', 'HS384']))($token),
+            fn() => (new FirebaseJwtDecoder(new Secret($this->key->keyMaterial(), 'HS512')))($token),
             UnexpectedValueException::class
         );
     }
@@ -152,17 +214,28 @@ class _FirebaseJwtDecoderTest extends TestCase
         );
 
         // log on error
+        $logger = new _ProxyLogger(function ($level, $message, $context) {
+            Assert::same(LogLevel::DEBUG, $level);
+            Assert::true($message !== '');
+            Assert::same('bad token', $context[0] ?? null);
+            Assert::type(UnexpectedValueException::class, $context[1] ?? null);
+        });
         Assert::throws(
-            fn() => (new FirebaseJwtDecoder('invalid'))('bad token', new _ProxyLogger(function (
-                $level,
-                $message,
-                $context
-            ) {
-                Assert::same(LogLevel::DEBUG, $level);
-                Assert::true($message !== '');
-                Assert::same('bad token', $context[0] ?? null);
-                Assert::type(UnexpectedValueException::class, $context[1] ?? null);
-            })),
+            function () use ($logger) {
+                return (new FirebaseJwtDecoder(new Secret($this->key->keyMaterial(), 'foo')))(
+                    'bad token',
+                    $logger,
+                );
+            },
+            UnexpectedValueException::class
+        );
+        Assert::throws(
+            function () use ($logger) {
+                return (new FirebaseJwtDecoder(new Secret('invalid', $this->key->algorithm())))(
+                    'bad token',
+                    $logger,
+                );
+            },
             UnexpectedValueException::class
         );
     }

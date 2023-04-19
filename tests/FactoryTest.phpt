@@ -25,9 +25,14 @@ use Tester\TestCase;
  */
 class _FactoryTest extends TestCase
 {
+    public function testWizardDefaultAlgo()
+    {
+        Assert::same('HS256', AuthWizard::$defaultAlgo);
+    }
+
     public function testAuthFactoryReturnsCorrectMiddleware()
     {
-        $f = new AuthFactory(AuthFactory::defaultDecoderFactory('whatever'), new ResponseFactory());
+        $f = new AuthFactory(fn() => fn() => null, new ResponseFactory());
         Assert::type(TokenMiddleware::class, $f->decodeTokens());
         Assert::type(GenericMiddleware::class, $f->assertTokens());
         Assert::type(GenericMiddleware::class, $f->inspectTokens(fn() => null));

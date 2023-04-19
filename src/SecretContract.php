@@ -14,7 +14,7 @@ interface SecretContract
     /**
      * Return the key material - the secret.
      */
-    public function keyMaterial();
+    public function keyMaterial(): mixed;
 
     /**
      * Return the algorithm valid for this key.

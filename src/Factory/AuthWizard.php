@@ -37,12 +37,12 @@ final class AuthWizard
      * @return TokenMiddleware
      */
     public static function decodeTokens(
-        $secret,
+        string|array|SecretContract $secret,
         ?string $tokenAttribute = null,
         ?string $headerName = Man::HEADER_NAME,
         ?string $cookieName = Man::COOKIE_NAME,
         ?string $errorAttribute = null,
-        ?Logger $logger = null
+        ?Logger $logger = null,
     ): MiddlewareInterface {
         return self::factory($secret, null)->decodeTokens(
             $tokenAttribute,
@@ -64,7 +64,7 @@ final class AuthWizard
     public static function assertTokens(
         ResponseFactory $responseFactory,
         ?string $tokenAttribute = null,
-        ?string $errorAttribute = null
+        ?string $errorAttribute = null,
     ): MiddlewareInterface {
         return self::factory(null, $responseFactory)->assertTokens($tokenAttribute, $errorAttribute);
     }
@@ -82,7 +82,7 @@ final class AuthWizard
         ResponseFactory $responseFactory,
         callable $inspector,
         ?string $tokenAttribute = null,
-        ?string $errorAttribute = null
+        ?string $errorAttribute = null,
     ): MiddlewareInterface {
         return self::factory(null, $responseFactory)->inspectTokens($inspector, $tokenAttribute, $errorAttribute);
     }
@@ -95,8 +95,8 @@ final class AuthWizard
      * @return AuthFactory
      */
     public static function factory(
-        $secret,
-        ?ResponseFactory $responseFactory
+        string|array|SecretContract|null $secret,
+        ?ResponseFactory $responseFactory,
     ): AuthFactory {
         $decoder = $secret !== null ? self::defaultDecoder($secret) : null;
         return new AuthFactory(
@@ -115,21 +115,20 @@ final class AuthWizard
      * @throws
      */
     public static function defaultDecoder(
-        $secret,
-        ?string $algo = null
+        string|array|SecretContract $secret,
+        ?string $algo = null,
     ): callable {
         if (!class_exists(JWT::class)) {
             throw new LogicException(
                 'Firebase JWT is not installed. ' .
-                'Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^5.5"`).'
+                'Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^6.0|^5.5"`).'
             );
         }
-        if ($algo !== null && is_string($secret)) {
-            $secret = new Secret($secret, $algo);
+        if (is_string($secret)) {
+            $secret = new Secret($secret, $algo ?? self::$defaultAlgo);
         }
         return new FirebaseJwtDecoder(
-            $secret,
-            $algo,
+            ...(is_iterable($secret) ? $secret : [$secret])
         );
     }
 }

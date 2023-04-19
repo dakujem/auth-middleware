@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "php": "^7.4 || ^8.0",
+    "php": "^8.0",
     "dakujem/generic-middleware": "^1",
     "psr/http-factory": "^1.0",
     "psr/http-server-middleware": "^1.0",
@@ -18,7 +18,7 @@
   },
   "require-dev": {
     "ext-json": "*",
-    "firebase/php-jwt": "^5",
+    "firebase/php-jwt": "^6.0|^5.5",
     "nette/tester": "^2.4.1",
     "slim/psr7": "^1.2",
     "slim/slim": "^4.5",
