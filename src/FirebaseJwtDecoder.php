@@ -54,7 +54,7 @@ final class FirebaseJwtDecoder
         }
 
         if (!is_string($secret) && !class_exists(Key::class)) {
-            throw new UnexpectedValueException(
+            throw new InvalidArgumentException(
                 'Unsupported configuration. To use the `Secret` objects, upgrade peer library `firebase/php-jwt` to version 5.5 or 6 and above.'
             );
         }
@@ -68,7 +68,7 @@ final class FirebaseJwtDecoder
             } elseif (is_array($secret)) {
                 $this->secret = array_map($key, $secret);
             } else {
-                throw new UnexpectedValueException(
+                throw new InvalidArgumentException(
                     'Invalid configuration: The secret must ether be a string, a `SecretContract` object or an array of such objects.'
                 );
             }
@@ -91,7 +91,7 @@ final class FirebaseJwtDecoder
                         // This is done to mitigate a possible security issue CVE-2021-46743.
                         // For more details, see https://github.com/firebase/php-jwt/issues/351.
                         //
-                        throw new UnexpectedValueException(
+                        throw new InvalidArgumentException(
                             'Peer library `firebase/php-jwt` has been updated to version v6 or above, which does not work with the current secret+algorithm configuration combination. Refer to the documentation od dakujem/auth-middleware for this version to solve the configuration issue.'
                         );
                     }

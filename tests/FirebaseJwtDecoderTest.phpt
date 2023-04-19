@@ -8,6 +8,8 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/support/ProxyLogger.php';
 
 use Dakujem\Middleware\FirebaseJwtDecoder;
+use Dakujem\Middleware\Secret;
+use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\Test\Support\_ProxyLogger;
 use InvalidArgumentException;
 use LogicException;
@@ -39,6 +41,27 @@ class _FirebaseJwtDecoderTest extends TestCase
         }');
         Assert::equal($expected, (new FirebaseJwtDecoder($this->key))($token));
         Assert::equal($expected, (new FirebaseJwtDecoder($this->key, ['HS256']))($token));
+        Assert::equal($expected, (new FirebaseJwtDecoder(new Secret($this->key, 'HS256')))($token));
+        Assert::equal($expected, (new FirebaseJwtDecoder([new Secret($this->key, 'HS256')]))($token));
+    }
+
+    public function testInvalidSecrets()
+    {
+        Assert::type(SecretContract::class, new Secret('foo', ''));
+        Assert::type(SecretContract::class, new Secret('foo', 'foo'));
+
+        Assert::throws(
+            fn() => new Secret('', 'foo'),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret(null, 'foo'),
+            InvalidArgumentException::class
+        );
+        Assert::throws(
+            fn() => new Secret([], 'foo'),
+            InvalidArgumentException::class
+        );
     }
 
     public function testMalformedToken()
@@ -94,6 +117,11 @@ class _FirebaseJwtDecoderTest extends TestCase
             InvalidArgumentException::class
         );
 
+        Assert::throws(
+            fn() => new FirebaseJwtDecoder((object)[]),
+            InvalidArgumentException::class
+        );
+
         $token = implode('.', $this->tokenParts());
         Assert::throws(
             fn() => (new FirebaseJwtDecoder('foobar!'))($token),
@@ -104,6 +132,10 @@ class _FirebaseJwtDecoderTest extends TestCase
     public function testInvalidAlgo()
     {
         $token = implode('.', $this->tokenParts());
+        Assert::throws(
+            fn() => (new FirebaseJwtDecoder($this->key, []))($token),
+            InvalidArgumentException::class
+        );
         Assert::throws(
             fn() => (new FirebaseJwtDecoder($this->key, ['ritpalova']))($token),
             UnexpectedValueException::class
