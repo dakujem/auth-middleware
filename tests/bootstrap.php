@@ -15,3 +15,6 @@ use Tester\Environment;
 
 // Nette Tester initialization.
 Environment::setup();
+
+// This is done in this version only. See FirebaseJwtDecoder for info.
+error_reporting(E_ALL ^ E_USER_WARNING);

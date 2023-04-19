@@ -6,6 +6,9 @@ namespace Dakujem\Middleware\Test;
 
 require_once __DIR__ . '/../vendor/nette/tester/src/bootstrap.php';
 require_once __DIR__ . '/../src/Factory/AuthFactory.php';
+require_once __DIR__ . '/../src/Factory/AuthWizard.php';
+require_once __DIR__ . '/../vendor/psr/http-factory/src/ResponseFactoryInterface.php';
+require_once __DIR__ . '/../vendor/slim/psr7/src/Factory/ResponseFactory.php';
 
 use Dakujem\Middleware\Factory\AuthFactory;
 use Dakujem\Middleware\FirebaseJwtDecoder;
@@ -23,5 +26,5 @@ use Tester\Assert;
 Assert::throws(
     fn() => AuthFactory::defaultDecoderFactory('doesntmatter'),
     LogicException::class,
-    'Firebase JWT is not installed. Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^5.0"`).'
+    'Firebase JWT is not installed. Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^5.5"`).'
 );

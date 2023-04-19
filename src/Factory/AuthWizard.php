@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Dakujem\Middleware\Factory;
 
+use Dakujem\Middleware\FirebaseJwtDecoder;
 use Dakujem\Middleware\GenericMiddleware;
+use Dakujem\Middleware\Secret;
+use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\TokenManipulators as Man;
 use Dakujem\Middleware\TokenMiddleware;
+use Firebase\JWT\JWT;
+use LogicException;
 use Psr\Http\Message\ResponseFactoryInterface as ResponseFactory;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Log\LoggerInterface as Logger;
@@ -18,25 +23,12 @@ use Psr\Log\LoggerInterface as Logger;
  */
 final class AuthWizard
 {
-    /**
-     * Create an instance of AuthFactory.
-     *
-     * @param string|null $secret
-     * @param ResponseFactory|null $responseFactory
-     * @return AuthFactory
-     */
-    public static function factory(?string $secret, ?ResponseFactory $responseFactory): AuthFactory
-    {
-        return new AuthFactory(
-            $secret !== null ? AuthFactory::defaultDecoderFactory($secret) : null,
-            $responseFactory
-        );
-    }
+    public static string $defaultAlgo = 'HS256';
 
     /**
      * @see AuthFactory::decodeTokens()
      *
-     * @param string $secret API secret key
+     * @param string|SecretContract[]|SecretContract $secret API secret key
      * @param string|null $tokenAttribute
      * @param string|null $headerName
      * @param string|null $cookieName
@@ -45,14 +37,14 @@ final class AuthWizard
      * @return TokenMiddleware
      */
     public static function decodeTokens(
-        string $secret,
+        $secret,
         ?string $tokenAttribute = null,
         ?string $headerName = Man::HEADER_NAME,
         ?string $cookieName = Man::COOKIE_NAME,
         ?string $errorAttribute = null,
         ?Logger $logger = null
     ): MiddlewareInterface {
-        return static::factory($secret, null)->decodeTokens(
+        return self::factory($secret, null)->decodeTokens(
             $tokenAttribute,
             $headerName,
             $cookieName,
@@ -74,7 +66,7 @@ final class AuthWizard
         ?string $tokenAttribute = null,
         ?string $errorAttribute = null
     ): MiddlewareInterface {
-        return static::factory(null, $responseFactory)->assertTokens($tokenAttribute, $errorAttribute);
+        return self::factory(null, $responseFactory)->assertTokens($tokenAttribute, $errorAttribute);
     }
 
     /**
@@ -92,6 +84,52 @@ final class AuthWizard
         ?string $tokenAttribute = null,
         ?string $errorAttribute = null
     ): MiddlewareInterface {
-        return static::factory(null, $responseFactory)->inspectTokens($inspector, $tokenAttribute, $errorAttribute);
+        return self::factory(null, $responseFactory)->inspectTokens($inspector, $tokenAttribute, $errorAttribute);
+    }
+
+    /**
+     * Create an instance of AuthFactory.
+     *
+     * @param string|SecretContract[]|SecretContract|null $secret
+     * @param ResponseFactory|null $responseFactory
+     * @return AuthFactory
+     */
+    public static function factory(
+        $secret,
+        ?ResponseFactory $responseFactory
+    ): AuthFactory {
+        $decoder = $secret !== null ? self::defaultDecoder($secret) : null;
+        return new AuthFactory(
+            $decoder !== null ? fn() => $decoder : null,
+            $responseFactory
+        );
+    }
+
+    /**
+     * Creates a default decoder factory.
+     * The factory can be used for the constructor.
+     *
+     * @param string|SecretContract[]|SecretContract $secret secret key for JWT decoder
+     * @param string|null $algo optional algorithm; only used when $secret is a string
+     * @return callable fn():FirebaseJwtDecoder
+     * @throws
+     */
+    public static function defaultDecoder(
+        $secret,
+        ?string $algo = null
+    ): callable {
+        if (!class_exists(JWT::class)) {
+            throw new LogicException(
+                'Firebase JWT is not installed. ' .
+                'Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^5.5"`).'
+            );
+        }
+        if ($algo !== null && is_string($secret)) {
+            $secret = new Secret($secret, $algo);
+        }
+        return new FirebaseJwtDecoder(
+            $secret,
+            $algo,
+        );
     }
 }

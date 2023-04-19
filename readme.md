@@ -22,7 +22,7 @@ Use `Dakujem\Middleware\AuthWizard` for convenience:
 ```php
 /* @var Slim\App $app */
 $app->add(AuthWizard::assertTokens($app->getResponseFactory()));
-$app->add(AuthWizard::decodeTokens('a-secret-api-key-never-to-commit'));
+$app->add(AuthWizard::decodeTokens(new Secret('a-secret-api-key-never-to-commit', 'HS256')));
 ```
 
 The pair of middleware (MW) will look for a [JWT](https://jwt.io/introduction/)
@@ -41,7 +41,7 @@ $decodedToken = $request->getAttribute('token');
 
 You can choose to apply the assertion to selected routes only instead of every route:
 ```php
-$mwFactory = AuthWizard::factory('a-secret-api-key-never-to-commit', $app->getResponseFactory());
+$mwFactory = AuthWizard::factory(new Secret('a-secret-api-key-never-to-commit', 'HS256'), $app->getResponseFactory());
 
 // Decode the token for all routes,
 $app->add($mwFactory->decodeTokens());
@@ -74,8 +74,9 @@ read the ["Compose Your Own Middleware"](#compose-your-own-middleware) chapter b
 ## Extracting & Decoding JWT
 
 ```php
-AuthWizard::decodeTokens(
-    'a-secret-api-key-never-to-commit',
+AuthWizard::decodeTokens(__
+    // a combination of secret and the encryption algorithm used
+    new Secret('a-secret-api-key-never-to-commit', 'HS256'),
     'token',          // what attribute to put the decoded token to
     'Authorization',  // what header to look for the Bearer token in
     'token',          // what cookie to look for the raw token in
@@ -252,7 +253,7 @@ It is used as a _decoder_ for the `TokenMiddleware`.\
 You can swap it for a different implementation.
 
 You need to install [Firebase JWT](https://github.com/firebase/php-jwt) package in order to use this decoder.\
-`composer require firebase/php-jwt:"^5.0"`
+`composer require firebase/php-jwt:"^5.5"`
 
 
 ### Logger
@@ -273,6 +274,24 @@ but the assertions can be _composed_ and applied to groups or individual routes 
 Run unit tests using the following command:
 
 `$` `composer test`
+
+
+## Compatibility
+
+| `dakujem/auth-middleware` | PHP       |
+|:--------------------------|:----------|
+| `1.x`                     | 7.4 - 8.2 |
+| `2.x`                     | 8+        |
+
+
+In order to use the `FirebaseJwtDecoder` decoder, a correct version of `firebase/php-jwt` must be installed.
+The use of this decoder is not required though.
+
+| `dakujem/auth-middleware` | `firebase/php-jwt`                                         |
+|:--------------------------|:-----------------------------------------------------------|
+| `1.0` - `1.2`             | `^5`                                                       |
+| `1.2`                     | `^6` when using a single secret+algorithm combination only |
+| `2`                       | `^5.5`, `^6` and above                                     |
 
 
 ## Contributing

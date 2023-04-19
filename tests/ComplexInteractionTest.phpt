@@ -60,7 +60,7 @@ class _ComplexInteractionTest extends TestCase
     }
 
 
-    // TODO refactor is due...
+    // TODO refactor is overdue...
 
     /** @noinspection PhpIncompatibleReturnTypeInspection */
     private function req(): Request
@@ -68,16 +68,16 @@ class _ComplexInteractionTest extends TestCase
         return (new RequestFactory())->createRequest('GET', '/');
     }
 
-    // TODO refactor is due...
+    // TODO refactor is overdue...
     private function validToken(): string
     {
         return JWT::encode([
             'sub' => 42,
             'foo' => 'bar',
-        ], $this->key);
+        ], $this->key, AuthWizard::$defaultAlgo);
     }
 
-    // TODO refactor is due...
+    // TODO refactor is overdue...
     private string $key = 'Dakujem za halusky!';
 
     public function testTokenIsPresent()

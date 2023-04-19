@@ -6,9 +6,9 @@ namespace Dakujem\Middleware\Factory;
 
 use Dakujem\Middleware\FirebaseJwtDecoder;
 use Dakujem\Middleware\GenericMiddleware;
+use Dakujem\Middleware\SecretContract;
 use Dakujem\Middleware\TokenManipulators as Man;
 use Dakujem\Middleware\TokenMiddleware;
-use Firebase\JWT\JWT;
 use LogicException;
 use Psr\Http\Message\ResponseFactoryInterface as ResponseFactory;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -167,20 +167,20 @@ class AuthFactory
     }
 
     /**
+     * @deprecated please use AuthWizard::defaultDecoder instead
+     *
      * Creates a default decoder factory.
      * The factory can be used for the constructor.
      *
-     * @param string $secret secret key for JWT decoder
+     * @param string|SecretContract[]|SecretContract $secret secret key for JWT decoder
+     * @param string|null $algo optional algorithm; only used when $secret is a string
      * @return callable fn():FirebaseJwtDecoder
      */
-    public static function defaultDecoderFactory(string $secret): callable
-    {
-        if (!class_exists(JWT::class)) {
-            throw new LogicException(
-                'Firebase JWT is not installed. ' .
-                'Requires firebase/php-jwt package (`composer require firebase/php-jwt:"^5.0"`).'
-            );
-        }
-        return fn(): FirebaseJwtDecoder => new FirebaseJwtDecoder($secret);
+    public static function defaultDecoderFactory(
+        $secret,
+        ?string $algo = null
+    ): callable {
+        $decoder = AuthWizard::defaultDecoder($secret, $algo);
+        return fn(): FirebaseJwtDecoder => $decoder;
     }
 }

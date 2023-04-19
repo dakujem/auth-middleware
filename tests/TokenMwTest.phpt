@@ -8,6 +8,7 @@ require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/support/ProxyLogger.php';
 
 use ArrayIterator;
+use Dakujem\Middleware\Factory\AuthWizard;
 use Dakujem\Middleware\FirebaseJwtDecoder;
 use Dakujem\Middleware\Test\Support\_ProxyLogger;
 use Dakujem\Middleware\TokenManipulators;
@@ -51,7 +52,7 @@ class _TokenMwTest extends TestCase
         return JWT::encode([
             'sub' => 42,
             'foo' => 'bar',
-        ], $this->key);
+        ], $this->key, AuthWizard::$defaultAlgo);
     }
 
     public function testHappyPath()

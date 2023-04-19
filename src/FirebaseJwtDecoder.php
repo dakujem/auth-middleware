@@ -6,19 +6,28 @@ namespace Dakujem\Middleware;
 
 use DomainException;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use ReflectionClass;
+use ReflectionException;
 use UnexpectedValueException;
 
 /**
  * A callable decoder that uses Firebase JWT implementation.
  *
- * Note: firebase/php-jwt is a peer dependency, you need to install it separately:
- *   `composer require firebase/php-jwt:"^5.0"`
+ * Notes:
+ *   firebase/php-jwt is a peer dependency, you need to install it separately:
+ *   `composer require firebase/php-jwt:"^5.5"`
+ *   This decoder works with all v5.* branches of firebase/php-jwt,
+ *   but we recommend using version "^5.5" to mitigate a possible security issue CVE-2021-46743.
+ *
+ *   Alternatively, update dakujem/auth-middleware to v2 and firebase/php-jwt to v6 to prevent the issue completely:
+ *   `composer require dakujem/auth-middleware:"^2" firebase/php-jwt:"^6.0"`
  *
  * Usage with TokenMiddleware:
- *   $mw = new TokenMiddleware(new FirebaseJwtDecoder('my-secret-is-not-committed-to-the-repo'));
+ *   $mw = new TokenMiddleware(new FirebaseJwtDecoder(new Secret('my-secret-is-not-committed-to-the-repo')));
  *
  * Warning:
  *   This decoder _only_ ensures that the token has been signed by the given secret key
@@ -29,17 +38,86 @@ use UnexpectedValueException;
  */
 final class FirebaseJwtDecoder
 {
-    private string $secret;
-    /** @var string[] */
-    private array $algos;
+    /** @var Key|Key[]|string */
+    private $secret;
+    private ?array $algos;
 
-    public function __construct(string $secret, ?array $algos = null)
+    public function __construct($secret, ?array $algos = null)
     {
-        if ($secret === '') {
-            throw new InvalidArgumentException('The secret key may not be empty.');
+        if (empty($secret)) {
+            throw new InvalidArgumentException('Invalid configuration: The secret key may not be empty.');
         }
-        $this->secret = $secret;
-        $this->algos = $algos ?? ['HS256', 'HS512', 'HS384'];
+        $algos ??= ['HS256', 'HS512', 'HS384'];
+
+        if (count($algos) === 0) {
+            throw new InvalidArgumentException('Invalid configuration: No encryption algorithms provided.');
+        }
+
+        if (!is_string($secret) && !class_exists(Key::class)) {
+            throw new UnexpectedValueException(
+                'Unsupported configuration. To use the `Secret` objects, upgrade peer library `firebase/php-jwt` to version 5.5 or 6 and above.'
+            );
+        }
+        if (!is_string($secret)) {
+            $key = fn(SecretContract $s): Key => new Key($s->keyMaterial(), $s->algorithm());
+            if (is_array($secret) && count($secret) === 1) {
+                $secret = array_pop($secret);
+            }
+            if ($secret instanceof SecretContract) {
+                $this->secret = $key($secret);
+            } elseif (is_array($secret)) {
+                $this->secret = array_map($key, $secret);
+            } else {
+                throw new UnexpectedValueException(
+                    'Invalid configuration: The secret must ether be a string, a `SecretContract` object or an array of such objects.'
+                );
+            }
+        } else {
+            $this->secret = $secret;
+        }
+
+        // In certain configurations, the decoding will fail. To prevent the failure, we throw an exception here.
+        if (is_string($secret) && class_exists(Key::class)) {
+            if (count($algos) > 1) {
+                try {
+                    // The following detects v6 of firebase/php-jwt lib.
+                    if ((new ReflectionClass(JWT::class))->getMethod('decode')->getNumberOfParameters() < 3) {
+                        //
+                        // If this is happening to you, there are 3 options:
+                        // 1. use a single secret+algorithm combination either using the `Secret` object or passing an array with a single algorithm to the `$algos` parameter
+                        // 2. use multiple `Secret` objects and pass them to the `$secret` parameter AND use "kid" JWT header parameter when encoding the JWT
+                        // 3. downgrade firebase/php-jwt to version v5.5 or below (not recommended)
+                        //
+                        // This is done to mitigate a possible security issue CVE-2021-46743.
+                        // For more details, see https://github.com/firebase/php-jwt/issues/351.
+                        //
+                        throw new UnexpectedValueException(
+                            'Peer library `firebase/php-jwt` has been updated to version v6 or above, which does not work with the current secret+algorithm configuration combination. Refer to the documentation od dakujem/auth-middleware for this version to solve the configuration issue.'
+                        );
+                    }
+                } catch (ReflectionException $e) {
+                    // ignore
+                }
+                //
+                // If this is happening to you, there are 3 options:
+                // 1. use a single secret+algorithm combination either using the `Secret` object or passing an array with a single algorithm to the `$algos` parameter
+                // 2. use multiple `Secret` objects and pass them to the `$secret` parameter AND use "kid" JWT header parameter when encoding the JWT
+                // 3. ignore this warning or downgrade dakujem/auth-middleware (not recommended)
+                //
+                // This is done to mitigate a possible security issue CVE-2021-46743.
+                // For more details, see https://github.com/firebase/php-jwt/issues/351.
+                //
+                trigger_error(
+                    'Peer library `firebase/php-jwt` has been updated to a version able to circumvent security vulnerability CVE-2021-46743. Please use the `Secret` objects instead of string constants: `new FirebaseJwtDecoder(new Secret($secretString, $algorithm))`.',
+                    E_USER_WARNING,
+                );
+            }
+            if (count($algos) === 1) {
+                $algorithm = array_pop($algos);
+                $this->secret = new Key($secret, $algorithm);
+            }
+        }
+        $this->algos = $algos;
     }
 
     /**
@@ -48,7 +126,7 @@ final class FirebaseJwtDecoder
      *
      * @param string $token raw token string
      * @param LoggerInterface|null $logger
-     * @return object|null decoded token payload
+     * @return object decoded token payload
      * @throws UnexpectedValueException
      */
     public function __invoke(string $token, ?LoggerInterface $logger = null): object
