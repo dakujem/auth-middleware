@@ -10,11 +10,11 @@
     }
   ],
   "require": {
-    "php": "^8.0",
+    "php": "^8.1",
     "dakujem/generic-middleware": "^1",
     "psr/http-factory": "^1.0",
     "psr/http-server-middleware": "^1.0",
-    "psr/log": "^1.0"
+    "psr/log": "^2 || ^3"
   },
   "require-dev": {
     "ext-json": "*",

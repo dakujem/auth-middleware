@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dakujem\Middleware\Test\Support;
 
 use Psr\Log\AbstractLogger;
+use Stringable;
 
 /**
  * ProxyLogger
@@ -20,7 +21,7 @@ class _ProxyLogger extends AbstractLogger
         $this->fn = $fn;
     }
 
-    public function log($level, $message, array $context = [])
+    public function log($level, string|Stringable $message, array $context = []): void
     {
         ($this->fn)($level, $message, $context);
     }
