@@ -6,6 +6,14 @@
 Auth-middleware follows semantic versioning.\
 Any issues should be reported.
 
+## v2.1
+
+- no code changes
+- fully support PHP 8.4
+- drop support for PHP 8.0
+- drop support for psr/log v1
+- add support psr/log v2 and v3 (required dependency)
+
 
 ## v2.0
 
