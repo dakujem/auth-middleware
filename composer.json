@@ -19,10 +19,10 @@
   "require-dev": {
     "ext-json": "*",
     "firebase/php-jwt": "^6.0|^5.5",
-    "nette/tester": "^2.4.1",
-    "slim/psr7": "^1.2",
-    "slim/slim": "^4.5",
-    "tracy/tracy": "^2.3"
+    "nette/tester": "^2.5.7",
+    "slim/psr7": "^1.8",
+    "slim/slim": "^4.15.1",
+    "tracy/tracy": "^2.10"
   },
   "autoload": {
     "psr-4": {
